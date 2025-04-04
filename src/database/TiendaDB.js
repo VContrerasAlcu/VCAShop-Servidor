@@ -1,7 +1,8 @@
-import {Pool} from 'pg';
+import pkg from 'pg';
+const { Pool } = pkg;
 
 class TiendaDB{
-    async conectar(){
+    static async conectar(){
         const pool = new Pool({
             user: 'vicente',
             host: 'localhost',
@@ -19,7 +20,7 @@ class TiendaDB{
             throw error;
         }
     }
-    async consultar(client, consulta){
+    static async consultar(client, consulta){
         try{
             const result = await client.query(consulta);
             return result.rows;
@@ -29,7 +30,7 @@ class TiendaDB{
             throw error;
         }
     }
-    async desconectar(client){
+    static async desconectar(client){
         try{
             await client.release();
         }
