@@ -3,12 +3,17 @@ import TiendaDB from '../database/TiendaDB';
 
 class Clientes{
     constructor(){
-        this.client = TiendaDB.conectar();
+        this.client = null;
     }
 
-    buscar(email){
-        const consulta = `SELECT * FROM clientes WHERE email='${email}'`;
-        const result = TiendaDB.consultar(this.client, consulta);
+    async conectar(){
+        this.client = await TiendaDB.conectar();
+    }
+
+    async buscar(email){
+        const consulta = `SELECT * FROM clientes WHERE email=$1`;
+        const parametros = [email];
+        const result = await TiendaDB.consultar(this.client, consulta, parametros);
         if (result.length>0){
             const cliente = result[0];
             return new Cliente(
@@ -16,15 +21,25 @@ class Clientes{
                 cliente.direccionenvio, cliente.password
                 )
         }
+        else return null;
     }
 
-    insertar(cliente){
-        const consulta = `INSERT INTO clientes (email, nombre, direccion, telefono, direccionenvio, password) VALUES
-                            ('${cliente.email}', '${cliente.nombre}', '${cliente.direccion}', '${cliente.telefono}',
-                             '${cliente.direccionenvio}', '${cliente.password}')`;
-        
-        const result = TiendaDB.consultar(this.client, consulta);
-       
+    async insertar(cliente){
+        const consulta = `INSERT INTO clientes (email, password) VALUES ($1, $2)`;        
+        const parametros = [cliente.email, cliente.password];
+        const result = await TiendaDB.consultar(this.client, consulta, parametros);
+    }
 
+    async actualizar(cliente){
+        const consulta = `UPDATE clientes
+                          SET nombre=$1, direccion=$2, telefono=$3,
+                              direccionenvio=$4, password=$5 
+                          WHERE email=$6`;
+
+        const parametros = [cliente.nombre, cliente.direccion, cliente.telefono, 
+                            cliente.direccionenvio, cliente.password, cliente.email];
+        
+        const result = TiendaDB.consultar(this.client, consulta, parametros);
+        return result;
     }
 }
