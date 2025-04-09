@@ -17,8 +17,7 @@ class Clientes{
         if (result.length>0){
             const cliente = result[0];
             return new Cliente(
-                cliente.email, cliente.nombre, cliente.direccion, cliente.telefono,
-                cliente.direccionenvio, cliente.password
+                cliente.email, cliente.password, cliente.nombre, cliente.direccion, cliente.telefono 
                 )
         }
         else return null;
@@ -28,16 +27,16 @@ class Clientes{
         const consulta = `INSERT INTO clientes (email, password) VALUES ($1, $2)`;        
         const parametros = [cliente.email, cliente.password];
         const result = await TiendaDB.consultar(this.client, consulta, parametros);
+        return result;
     }
 
     async actualizar(cliente){
         const consulta = `UPDATE clientes
-                          SET nombre=$1, direccion=$2, telefono=$3,
-                              direccionenvio=$4, password=$5 
+                          SET nombre=$1,  password=$5, direccion=$2, telefono=$3,
                           WHERE email=$6`;
 
-        const parametros = [cliente.nombre, cliente.direccion, cliente.telefono, 
-                            cliente.direccionenvio, cliente.password, cliente.email];
+        const parametros = [cliente.nombre, cliente.password, cliente.direccion, cliente.telefono, 
+                            cliente.email];
         
         const result = TiendaDB.consultar(this.client, consulta, parametros);
         return result;

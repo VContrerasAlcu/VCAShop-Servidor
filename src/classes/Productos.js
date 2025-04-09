@@ -21,10 +21,14 @@ class Productos {
         const consulta = 'SELECT * FROM productos';
         const parametros = [];
         const result =  await TiendaDB.consultar(this.client, consulta,parametros);
-        const productos = result.map((producto) => new Producto(
+        if (result.length > 0){
+                const productos = result.map((producto) => new Producto(
                                         producto.id, producto.nombre, producto.descripcion, producto.precio, 
                                         producto.stock, producto.imagen, producto.categoria));
-        return productos;
+                return productos;
+        }
+        else return null;
+        
     }
 
     async insertar(producto) {
@@ -45,7 +49,7 @@ class Productos {
                           WHERE id=$7`;
         const parametros = [producto.nombre, producto.descripcion, producto.precio, producto.stock,
                         producto.imagen, producto.categoria,producto.id];
-        const result = await TiendaDB.consultar(this.client, consulta,parametros);
+        const result = await TiendaDB.consultar(this.client, consulta, parametros);
         return result;
     }
 

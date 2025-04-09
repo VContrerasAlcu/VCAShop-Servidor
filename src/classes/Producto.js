@@ -9,6 +9,10 @@ class Producto{
         this.imagen = imagen;
         this.categoria = categoria;
     }
+
+    modificarStock(stock){
+        this.stock = stock;
+    }
 }
 
 export default Producto;
