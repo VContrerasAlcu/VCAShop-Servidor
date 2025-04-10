@@ -20,9 +20,9 @@ class TiendaDB{
             throw error;
         }
     }
-    static async consultar(client, consulta){
+    static async consultar(client, consulta, parametros){
         try{
-            const result = await client.query(consulta);
+            const result = await client.query(consulta,parametros);
             return result.rows;
         }
         catch (error){
