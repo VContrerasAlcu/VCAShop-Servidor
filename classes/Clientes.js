@@ -1,5 +1,5 @@
-import Cliente from 'Cliente.js';
-import TiendaDB from '../database/TiendaDB';
+import Cliente from './Cliente.js';
+import TiendaDB from '../database/TiendaDB.js';
 
 class Clientes{
     constructor(){
@@ -42,3 +42,5 @@ class Clientes{
         return result;
     }
 }
+
+export default Clientes;

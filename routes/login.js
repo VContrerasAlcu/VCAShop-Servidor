@@ -1,21 +1,26 @@
 import express from "express";
 import bcrypt from "bcrypt"; // Para verificar la contraseña
-import { generarToken } from "./auth.js";
+import { generarToken } from "../controllers/auth.js";
+import Clientes from "../classes/Clientes.js";
+
 
 const router = express.Router();
 
-// Simulación de base de datos de usuarios
-const usuarios = [{ id: 1, email: "vicente@email.com", password: "$2b$10$hashEjemplo" }]; // Contraseña encriptada
-
-router.post("/login", async (req, res) => {
+router.post("/", async (req, res) => {
     const { email, password } = req.body;
-    const usuario = usuarios.find(u => u.email === email);
 
-    if (!usuario || !(await bcrypt.compare(password, usuario.password))) {
+
+    const clientes = new Clientes();
+    await clientes.conectar();
+    const cliente = await clientes.buscar(email);
+
+    //if (!cliente || !(await bcrypt.compare(password, cliente.password))) {
+    if (!cliente || password!=cliente.password) {
+        
         return res.status(401).json({ mensaje: "Credenciales inválidas" });
     }
 
-    const token = generarToken(usuario);
+    const token = generarToken(cliente);
     res.json({ token });
 });
 
