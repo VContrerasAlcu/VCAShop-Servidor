@@ -1,6 +1,7 @@
 import express from 'express';
 import rutaProductos from './routes/productos.js';
 import rutaLogin from './routes/login.js';
+import rutaClientes from './routes/clientes.js';
 import  cors from 'cors';
 import path from 'path';
 
@@ -13,6 +14,7 @@ app.use(cors());
 
 app.use('/productos',rutaProductos);
 app.use('/login', rutaLogin);
+app.use('/clientes',rutaClientes);
 
 const PORT = 3001;
 app.listen(PORT, () => console.log(`servidor escuchando en http://localhost:${PORT}..`));

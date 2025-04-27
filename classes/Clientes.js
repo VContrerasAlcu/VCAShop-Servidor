@@ -32,10 +32,10 @@ class Clientes{
 
     async actualizar(cliente){
         const consulta = `UPDATE clientes
-                          SET nombre=$1,  password=$5, direccion=$2, telefono=$3,
-                          WHERE email=$6`;
+                          SET nombre=$1,  password=$2, direccion=$3, telefono=$4,
+                          WHERE email=$5`;
 
-        const parametros = [cliente.nombre, cliente.password, cliente.direccion, cliente.telefono, 
+        const parametros = [cliente.nombre, cliente.password, cliente.direccion, cliente.telefono,
                             cliente.email];
         
         const result = TiendaDB.consultar(this.client, consulta, parametros);
