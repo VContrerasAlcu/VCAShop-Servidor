@@ -1,7 +1,21 @@
 import jwt from "jsonwebtoken";
 
-const SECRET_KEY = "clave_super_segura"; // 🔑 Usa variables de entorno en producción
+const SECRET_KEY = "clave_super_segura"; 
 
-export function generarToken(usuario) {
-    return jwt.sign({ id: usuario.id, email: usuario.email }, SECRET_KEY, { expiresIn: "1h" });
+export function generarToken(cliente) {
+    return jwt.sign({ email: cliente.email, password: cliente.password }, SECRET_KEY, { expiresIn: "1h" });
+}
+
+export function generarTokenVerificacion(email, password){
+    return jwt.sign({email: email, password: password}, SECRET_KEY, {expiresIn: "1h"})
+}
+
+export function verificarToken(token){
+    try{
+        const datos = jwt.verify(token, SECRET_KEY);
+        return {exito: true, datos};
+    }
+    catch (error){
+        return {exito: false, mensaje: 'Token no válido o expirado'};
+    }
 }
