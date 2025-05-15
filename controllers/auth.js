@@ -13,7 +13,7 @@ export function generarTokenVerificacion(email, password){
 export function verificarToken(token){
     try{
         const datos = jwt.verify(token, SECRET_KEY);
-        return {exito: true, datos};
+        return {exito: true, datos: datos};
     }
     catch (error){
         return {exito: false, mensaje: 'Token no válido o expirado'};

@@ -104,6 +104,14 @@ class Productos {
 
     }
 
+    async consultarStock(producto){
+        const consulta = `SELECT stock FROM productos WHERE id=$1`;
+        const parametros = [producto.id];
+        const result = await TiendaDB.consultar(this.client, consulta, parametros);
+        return result[0];
+
+    }
+
 }
 
 export default Productos;

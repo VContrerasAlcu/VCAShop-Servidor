@@ -9,6 +9,7 @@ const router = express.Router();
 
 async function  enviarVerificacion(email, token, opcion){
     let enlaceVerificacion = '';
+    console.log(`estoy en enviarVerificacion. email: ${email}`);
     if (opcion == 'registro'){
         enlaceVerificacion = `http://localhost:3001/clientes/verificar?token=${token}`;
     }
@@ -93,6 +94,7 @@ export default (io) => {
 
     router.post('/registro', async (req,res) => {
         const {email,password} = req.body;
+        console.log(`estoy en registro. email: ${email}, password: ${password}`);
         const emailValido = Validaciones.validarEmail(email);
         const clientes = new Clientes();
         await clientes.conectar();
@@ -104,7 +106,7 @@ export default (io) => {
             if (!encontrado){
                 res.status(200).json({mensaje:"Pulse en el link que se le ha enviado al correo para completar el registro"})
                 const opcion = 'registro';
-                const token = generarToken(email,password);
+                const token = generarTokenVerificacion(email,password);
                 enviarVerificacion(email, token, opcion);
                 
             }
@@ -125,30 +127,35 @@ export default (io) => {
     
         // Si existe un token, verifica si es válido
         if (token) {
-        const resultado = verificarToken(token);
-        if (resultado.exito) {
-            const datos = resultado.datos;
-            const cliente = new Cliente(datos.email, datos.password);
-    
-            // Inserta el cliente en la base de datos
-            await clientes.insertar(cliente);
-            verificado = true;
-    
-            // Responde con el estado de verificación
-            return res.json({ email: datos.email, verificado });
-        } else {
-            res.redirect('http://localhost:3000/registroError');
-            return;
-        }
+            const resultado = verificarToken(token);
+            
+            if (resultado.exito) {
+                console.log('token exito en verificar');
+                const datos = resultado.datos;
+                console.log(`datos devueltos por verificarToken: ${resultado.datos}`);
+                console.log(`email resultado de la verificacion: ${datos.email}`);
+
+                const cliente = new Cliente(datos.email, datos.password);
+        
+                // Inserta el cliente en la base de datos
+                await clientes.insertar(cliente);
+                verificado = true;
+        
+                // Responde con el estado de verificación
+                return res.json({ email: datos.email, verificado });
+            } else {
+                res.redirect('http://localhost:3000/registroError');
+                return;
+            }
         }
     
         // Si existe un email pero no un token, verifica si está registrado
         if (email) {
-        const cliente = await clientes.buscar(email);
-        if (cliente) {
-            verificado = true; // Cambia el estado si el cliente está registrado
-        }
-        res.json({ email, verificado }); // Devuelve el estado
+            const cliente = await clientes.buscar(email);
+            if (cliente) {
+                verificado = true; // Cambia el estado si el cliente está registrado
+            }
+            res.json({ email, verificado }); // Devuelve el estado
         }
     });
 
