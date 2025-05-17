@@ -7,7 +7,7 @@ export function generarToken(cliente) {
 }
 
 export function generarTokenVerificacion(email, password){
-    return jwt.sign({email: email, password: password}, SECRET_KEY, {expiresIn: "1h"})
+    return jwt.sign({email: email, password: password}, SECRET_KEY, {expiresIn: "5m"})
 }
 
 export function verificarToken(token){

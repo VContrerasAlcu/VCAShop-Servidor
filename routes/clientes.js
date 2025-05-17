@@ -55,21 +55,6 @@ async function  enviarVerificacion(email, token, opcion){
 export default (io) => {
     const listaClientes = {};
 
-    io.on('connection',(socket) =>{
-        console.log('servidor preparado para la conexion');
-        socket.on('registro',(emailCliente) => {
-            console.log('cliente conectado con id: ', socket.id);
-            listaClientes[emailCliente] = socket.id;
-        })
-        socket.on('disconnect',() => {
-            const email = Object.keys(listaClientes).find(key => listaClientes[key] == socket.id);
-            if (email) {
-                delete listaClientes[email];
-                console.log('cliente desconectado');
-            }
-
-        })
-    })
 
     router.post("/login", async (req, res) => {
         const { email, password } = req.body;
@@ -94,7 +79,6 @@ export default (io) => {
 
     router.post('/registro', async (req,res) => {
         const {email,password} = req.body;
-        console.log(`estoy en registro. email: ${email}, password: ${password}`);
         const emailValido = Validaciones.validarEmail(email);
         const clientes = new Clientes();
         await clientes.conectar();

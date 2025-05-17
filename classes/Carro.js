@@ -2,8 +2,8 @@ import Productos from './Productos.js';
 class Carro{
     
 
-    constructor(){
-        this.contenido = [];
+    constructor(contenido = null){
+        this.contenido = contenido;
         this.productos = new Productos();
     }
 
