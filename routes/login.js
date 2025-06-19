@@ -21,7 +21,8 @@ router.post("/", async (req, res) => {
     }
 
     const token = generarToken(cliente);
-    res.json({ token });
+    cliente.autorizar(token);
+    res.json({ cliente });
 });
 
 export default router;

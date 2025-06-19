@@ -6,8 +6,7 @@ class Cliente{
         this.password = password;
         this.nombre = nombre;
         this.direccion = direccion;
-        this.telefono = telefono;
-        
+        this.telefono = telefono;        
        
     }
 
@@ -18,6 +17,7 @@ class Cliente{
     desautorizar(){
         this.token = null;
     }
+
 }
 
 export default Cliente;

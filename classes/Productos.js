@@ -17,6 +17,10 @@ class Productos {
         this.client = await TiendaDB.conectar();
     }
 
+    async desconectar(){
+        await TiendaDB.desconectar(this.client);
+    }
+
     async listar(){
         const consulta = 'SELECT * FROM productos';
         const parametros = [];
@@ -101,6 +105,14 @@ class Productos {
                                         producto.stock, producto.imagen, producto.categoria));
         
         return productos;
+
+    }
+
+    async consultarStock(producto){
+        const consulta = `SELECT stock FROM productos WHERE id=$1`;
+        const parametros = [producto.id];
+        const result = await TiendaDB.consultar(this.client, consulta, parametros);
+        return result[0].stock;
 
     }
 

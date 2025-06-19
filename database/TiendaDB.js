@@ -23,6 +23,7 @@ class TiendaDB{
     static async consultar(client, consulta, parametros){
         try{
             const result = await client.query(consulta,parametros);
+            console.log(`resultado de consultar en tiendadb: ${result}`);
             return result.rows;
         }
         catch (error){
