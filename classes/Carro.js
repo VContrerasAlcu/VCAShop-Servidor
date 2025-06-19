@@ -2,69 +2,90 @@ import Productos from './Productos.js';
 class Carro{
     
 
-    constructor(contenido = null){
+    constructor(contenido = []){
         this.contenido = contenido;
         this.productos = new Productos();
+        
     }
 
     async agregar(producto, cantidad){
+        await this.productos.conectar();
         const stock = await this.productos.consultarStock(producto);
+        console.log(`stock del producto: ${producto.nombre}: ${stock}`);
         if (cantidad <= stock){
-            const indice = existeProducto(producto);
+            const indice = this.existeProducto(producto);
             if (indice !== -1){
-                this.contenido[indice].id_cantidad += cantidad;
+                const cantidadActual = this.contenido[indice].cantidad;
+                const diferencia = cantidad - cantidadActual;
+                this.contenido[indice].cantidad = cantidad;
+                producto.stock -= diferencia;
+                this.contenido[indice].producto = producto;
                 
             }
             else {
-                this.contenido.push(producto, cantidad);
+                console.log(`Antes del push`);
+                this.contenido.push({producto, cantidad});
+                producto.stock -= cantidad;
+                
             }
-            producto.stock -= cantidad;
+            
             await this.productos.actualizar(producto);
-            return true;
+            await this.productos.desconectar();
+            return producto;
 
         }
-        else return false;
+        else {
+            console.log('Pedido superior a stock disponible');
+            await this.productos.desconectar();
+            return false;
+        } 
     
     }
 
-    async quitar(producto, cantidad){
-        const indice = existeProducto(producto);
+    async quitar(producto){
+        await this.productos.conectar();
+        const indice = this.existeProducto(producto);
         if (indice !== -1){
-            if (this.contenido[indice].cantidad >= cantidad){
-                this.contenido[indice].cantidad -= cantidad;
-                if (this.contenido[indice].cantidad == 0){
-                    this.contenido.splice(indice,1)
-                }
-                producto.stock += cantidad;
-                await this.productos.actualizar(producto);
-                return true
-            }
-            else return false;
+            producto.stock += this.contenido[indice].cantidad;
+            this.contenido.splice(indice,1);
+            await this.productos.actualizar(producto);
+            await this.productos.desconectar();
+            return true;
         }
-        else return false;
+         
+        else {
+            await this.productos.desconectar();
+            return false;
+        }
+        
     }
 
     
     existeProducto(producto){
-        let productoEncontrado = this.contenido.findIndex(productoEnCarrito => productoEnCarrito.producto.id === producto.id);
-        return productoEncontrado;
+            let productoEncontrado = this.contenido.findIndex(productoEnCarrito => productoEnCarrito.producto.id === producto.id);
+            return productoEncontrado;
+        
     }
 
     async devolverProductos(){
+        await this.productos.conectar();
         for (const item of this.contenido){
             item.producto.stock += item.cantidad;
             await this.productos.actualizar(item.producto);
         }
+        await this.productos.desconectar();
         this.vaciar();
     }
 
     vaciar(){
-        this.contenido = null;
+        this.contenido = [];
     }
 
-    cargar(){
-        return this.contenido;
-    }
+   cargar() {
+    console.log("Contenido del carro:", this.contenido);
+    return this.contenido.length > 0 ? this.contenido : [];
+    }   
+
     
     numProductos(){
         return this.contenido.length;
