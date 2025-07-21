@@ -3,6 +3,7 @@ import rutaProductos from './routes/productos.js';
 import rutaLogin from './routes/login.js';
 import rutaClientes from './routes/clientes.js';
 import rutaCarros from './routes/carros.js';
+import rutaPago from "./routes/pago.js";
 import  cors from 'cors';
 import path from 'path';
 import http from 'http';
@@ -50,6 +51,9 @@ app.use('/productos',rutaProductos);
 app.use('/login', rutaLogin);
 app.use('/clientes',rutaClientes);
 app.use('/carros', rutaCarros);
+app.use("/pago", rutaPago);
+
+
 
 const PORT = 3001;
 server.listen(PORT, () => console.log(`servidor escuchando en http://localhost:${PORT}..`));

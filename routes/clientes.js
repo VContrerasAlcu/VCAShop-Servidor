@@ -4,6 +4,7 @@ import { generarToken, generarTokenVerificacion, verificarToken } from '../contr
 import nodemailer from 'nodemailer';
 import Cliente from '../classes/Cliente.js';
 import Clientes from '../classes/Clientes.js';
+import { ja } from '@faker-js/faker';
 
 const router = express.Router();
 
@@ -207,6 +208,19 @@ router.post('/cambiarPass', async (req, res) => {
             res.status(200).json({token: token, mensaje:'Contraseña modificada. Vaya a la página de login.'});
         }
     }
+});
+
+router.post('/actualizarDatos', async (req, res) => {
+    const clienteRecibido = req.body;
+    const clientes = new Clientes();
+    await clientes.conectar();
+    const result = await clientes.actualizar(clienteRecibido);
+    if (result) {
+        res.status(200).send('Cliente actualizado correctamente');
+    }
+    else res.status(400).send('Error al actualizar el cliente.');
+
+    
 })
 
 export default router;

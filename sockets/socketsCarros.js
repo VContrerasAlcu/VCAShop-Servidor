@@ -92,6 +92,16 @@ export function socketCarro(io,socket) {
         }
         
         socket.emit('respuesta_quitar',respuesta);
+    });
+
+    socket.on('vaciar', async (data) => {
+        const cliente = data.cliente;
+        const carros = new Carros();
+        await carros.conectar();
+        const carroVaciado = await carros.vaciar(cliente.email);
+        console.log(`estoy en socket vaciar, email= ${cliente.email}, carroVaciado = ${carroVaciado}`);
+        socket.emit('respuesta_vaciar', carroVaciado);
+
     })
 
 }

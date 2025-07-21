@@ -61,6 +61,17 @@ class Carros {
         return result?.length > 0;
     }
 
+    async vaciar(email){
+        const consulta = `UPDATE carros
+                          SET carro = $1
+                          WHERE email = $2
+                          RETURNING *`;
+        const parametros = ['[]', email];
+        const result = await TiendaDB.consultar(this.client, consulta, parametros);
+        return result && result.rowCount > 0;
+        
+    }
+
 
 }
 
