@@ -24,8 +24,16 @@ class Clientes{
     }
 
     async insertar(cliente){
-        const consulta = `INSERT INTO clientes (email, password) VALUES ($1, $2)`;        
-        const parametros = [cliente.email, cliente.password];
+        let consulta, parametros;
+        if (!cliente.nombre){
+            consulta = `INSERT INTO clientes (email, password) VALUES ($1, $2)`;        
+            parametros = [cliente.email, cliente.password];
+        }
+        else{
+            consulta = `INSERT INTO clientes (email, password, nombre) VALUES ($1, $2, $3)`;        
+            parametros = [cliente.email, cliente.password, cliente.nombre];
+        }
+        
         const result = await TiendaDB.consultar(this.client, consulta, parametros);
         return result;
     }

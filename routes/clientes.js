@@ -7,17 +7,10 @@ import Clientes from '../classes/Clientes.js';
 import { ja } from '@faker-js/faker';
 
 const router = express.Router();
+const codigosVerificacion = {};
 
-async function  enviarVerificacion(email, token, opcion){
-    let enlaceVerificacion = '';
-    console.log(`estoy en enviarVerificacion. email: ${email}`);
-    if (opcion == 'registro'){
-        enlaceVerificacion = `http://localhost:3001/clientes/verificar?token=${token}`;
-    }
-    else {
-        enlaceVerificacion = `http://localhost:3001/clientes/verificarPass?token=${token}`;
-    }
-
+async function  enviarVerificacion(email, codigo){
+  
     const transporter = nodemailer.createTransport({
         service: 'Gmail',
         auth: {
@@ -34,18 +27,7 @@ async function  enviarVerificacion(email, token, opcion){
         from: '"VCA shop" <vcapost23@gmail.com>',
         to: email,
         subject: 'Verificación de cuenta',
-        html: `
-            <p>Haz clic en el botón para verificar tu cuenta:</p>
-            <a href="${enlaceVerificacion}" style="
-                display: inline-block;
-                padding: 10px 20px;
-                font-size: 16px;
-                color: #fff;
-                background-color: #007bff;
-                text-decoration: none;
-                border-radius: 5px;
-            ">Verificar Cuenta</a>
-            `,
+        html: `<p>Introduce el siguiente código para completar la acción: ${codigo}</p>`,
  
     }
 
@@ -72,6 +54,39 @@ router.post("/login", async (req, res) => {
     res.json({ cliente });
 });
 
+router.post("/login-google", async (req, res) => {
+  const { googleData } = req.body;
+
+  if (!googleData || !googleData.email) {
+    console.log('no googleData');
+    return res.status(400).json({ error: "Datos inválidos de Google." });
+  }
+
+  try {
+    const clientes = new Clientes();
+    await clientes.conectar();
+    let cliente = await clientes.buscar(googleData.email);
+    // Buscar si el cliente ya existe
+    //let cliente = await buscarClientePorEmail(googleData.email);
+
+    // Si no existe, crear cliente nuevo
+    if (!cliente) {
+      console.log('cliente no encontrado, intento de creacion');
+      cliente = new Cliente(googleData.email,"user",googleData.name);      
+      await clientes.insertar(cliente);
+    }
+
+    const token = generarToken(cliente);
+    cliente.autorizar(token);    
+    res.json({ cliente });
+  } catch (err) {
+    console.error("Error en login con Google:", err);
+    res.status(500).json({ error: "Error al acceder al sistema." });
+  }
+});
+
+
+
 
 
 router.post('/registro', async (req,res) => {
@@ -85,11 +100,17 @@ router.post('/registro', async (req,res) => {
     else {
         let encontrado = await clientes.buscar(email);
         if (!encontrado){
-            res.status(200).json({mensaje:"Pulse en el link que se le ha enviado al correo para completar el registro"})
-            const opcion = 'registro';
-            const token = generarTokenVerificacion(email,password);
-            enviarVerificacion(email, token, opcion);
-            
+            const codigo = Math.floor(100000 + Math.random() * 900000).toString();
+
+            codigosVerificacion[email] = {
+                codigo,
+                password, // puedes encriptarlo si prefieres
+                expires: Date.now() + 5 * 60 * 1000 // válido 5 minutos
+            };
+            enviarVerificacion(email, codigo);
+            res.json({ mensaje: "Código enviado al correo." });
+
+
         }
         else {
             res.status(401).json({error:'El email ya está registrado. Diríjase a la página de login'});
@@ -99,8 +120,37 @@ router.post('/registro', async (req,res) => {
 
 });
 
+router.post("/verificar-codigo", async (req, res) => {
+    const { email, codigo } = req.body;
+
+    const registro = codigosVerificacion[email];
+    const pass = registro.password;
+
+    if (!registro) {
+        return res.status(400).json({ error: "No se encontró el correo." });
+    }
+
+    if (Date.now() > registro.expires) {
+        delete codigosVerificacion[email];
+        return res.status(400).json({ error: "Código expirado." });
+    }
+
+    if (registro.codigo !== codigo) {
+        return res.status(401).json({ error: "Código incorrecto." });
+    }
+    const clientes = new Clientes();
+    await clientes.conectar()
+    const cliente = new Cliente(email, pass);    
+    // Inserta el cliente en la base de datos
+    await clientes.insertar(cliente);
+
+    delete codigosVerificacion[email];
+
+    res.json({ mensaje: "Cliente registrado correctamente." });
+});
+
 router.get('/verificar', async (req, res) => {
-    const { token, email } = req.query;
+    const {  email } = req.query;
     let verificado = false;
 
     const clientes = new Clientes();
@@ -140,26 +190,6 @@ router.get('/verificar', async (req, res) => {
     }
 });
 
-router.get('/verificarPass', async (req, res) => {
-    const { token } = req.query;
-    let verificado = false;
-
-    const clientes = new Clientes();
-    await clientes.conectar();
-    const resultado = verificarToken(token);
-    if (resultado.exito) {
-        console.log('token verificado');
-        verificado = true;
-        const emailToken = resultado.datos.email;
-        req.io.to(emailToken).emit('linked', {verificado,token});
-    }
-    else {
-        verificado = false;
-        const error = 'token no válido';
-        req.io.emit('linked',{verificado, error});
-    }
-
-});
 
 router.post('/recuperar', async (req,res) => {
     const {email} = req.body;
@@ -175,11 +205,13 @@ router.post('/recuperar', async (req,res) => {
         const encontrado = await clientes.buscar(email);
         
         if (encontrado){
-            console.log(encontrado.email, encontrado.password);
-            const token = generarToken(encontrado);
-            res.status(200).json({token: token, mensaje:"Pulse en el link que se le ha enviado al correo para completar el registro"})
-            const opcion = 'recuperacion';
-            enviarVerificacion(encontrado.email, token, opcion);
+            const codigo = Math.floor(100000 + Math.random() * 900000).toString();
+            codigosVerificacion[email] = {
+                codigo,
+                expires: Date.now() + 5 * 60 * 1000
+            }
+            enviarVerificacion(email, codigo);
+            res.status(200).json({mensaje: 'Código enviado al correo para recuperar contraseña'});
             
         }
         else {
@@ -190,24 +222,35 @@ router.post('/recuperar', async (req,res) => {
 
 });
 
-router.post('/cambiarPass', async (req, res) => {
-    const {token, nuevaPass} = req.body;
-    const resultado = verificarToken(token);
-    if (resultado.exito){
-        const clientes = new Clientes();
-        await clientes.conectar();
-        const cliente = await clientes.buscar(resultado.datos.email);
-        if (!cliente){
-            res.status(400).json({error: 'Cliente no encontrado'});
-        }
-        else{
-            console.log('la nueva pass es: ', nuevaPass);
-            cliente.password = nuevaPass;
-            console.log(cliente);
-            const result = await clientes.actualizar(cliente);
-            res.status(200).json({token: token, mensaje:'Contraseña modificada. Vaya a la página de login.'});
-        }
+router.post('/verificar-recuperacion', async (req, res) => {
+    const { email, codigo, nuevaPassword } = req.body;
+    const registro = codigosVerificacion[email];
+
+    if (!registro) {
+        return res.status(400).json({ error: "Solicitud inválida." });
     }
+
+    if (Date.now() > registro.expires) {
+        delete codigosVerificacion[email];
+        return res.status(400).json({ error: "Código expirado." });
+    }
+
+    if (registro.codigo !== codigo) {
+        return res.status(401).json({ error: "Código incorrecto." });
+    }
+    const clientes = new Clientes();
+    await clientes.conectar();
+    const cliente = await clientes.buscar(email);
+    if (!cliente){
+        res.status(400).json({error: 'Cliente no encontrado'});
+    }
+    else{
+        cliente.password = nuevaPassword;
+        const result = await clientes.actualizar(cliente);
+        delete codigosVerificacion[email];
+        res.json({ mensaje: "Contraseña actualizada correctamente." });
+    }
+
 });
 
 router.post('/actualizarDatos', async (req, res) => {
