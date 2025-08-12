@@ -30,7 +30,7 @@ class Carros {
 
     async actualizar(email, carro) {
         const consulta = `UPDATE carros
-                            SET carro=$1
+                            SET carro=$1, fecha = CURRENT_TIMESTAMP
                             WHERE email=$2 
                             RETURNING * `;
         const parametros = [JSON.stringify(carro),email];
@@ -71,6 +71,19 @@ class Carros {
         return result && result.rowCount > 0;
         
     }
+
+    async revisarFechaCarros(horas){
+        const consulta = `
+            SELECT email, carro
+            FROM carros
+            WHERE fecha < NOW() - ($1 * INTERVAL '1 hour')
+            `;
+        const parametros = [horas];
+        const result = await TiendaDB.consultar(this.client, consulta, parametros);
+        return result;
+    }
+
+ 
 
 
 }

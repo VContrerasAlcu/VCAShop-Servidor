@@ -9,6 +9,8 @@ import path from 'path';
 import http from 'http';
 import {Server} from 'socket.io';
 import {socketCarro} from './sockets/socketsCarros.js';
+import { eliminarCarrosAntiguos } from './servicios/LimpiezaCarros.js';
+import cron from 'node-cron';
 
 const listaClientes = {};
 
@@ -40,6 +42,17 @@ app.use((req,res,next) => {
     req.io = io;
     next();
 })
+
+cron.schedule('0 3 * * *', async () => {
+  console.log('⏰ Ejecutando limpieza de carros antiguos...');
+  try {
+    await eliminarCarrosAntiguos();
+  } catch (error) {
+    console.error('❌ Error al eliminar carros antiguos:', error);
+  }
+});
+
+
 
 
 app.use(express.static(path.join(process.cwd(), 'public')));
