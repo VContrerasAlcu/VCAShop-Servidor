@@ -1,78 +1,136 @@
 import TiendaDB from "../database/TiendaDB.js";
 
+/**
+ * Clase Carros
+ * Administra los carritos de compra almacenados en la base de datos.
+ * Cada carrito está asociado a un email y se guarda como JSON.
+ */
 class Carros {
-    
-    constructor(){
-        this.client = null;
+    constructor() {
+        this.client = null; // Cliente de conexión a la base de datos
     }
 
-    async conectar(){
+    /**
+     * Conecta con la base de datos.
+     * @returns {Promise<void>}
+     */
+    async conectar() {
         this.client = await TiendaDB.conectar();
     }
 
-    async desconectar(){
+    /**
+     * Cierra la conexión con la base de datos.
+     * @returns {Promise<void>}
+     */
+    async desconectar() {
         await TiendaDB.desconectar(this.client);
     }
 
-    async agregarCarro(email, carro){
-        const consulta = `INSERT INTO  carros(email,carro) VALUES ($1,$2)`;
-        const parametros = [email,JSON.stringify(carro)];
-        try{
+    /**
+     * Agrega un nuevo carrito a la base de datos.
+     * @param {string} email - Email del usuario.
+     * @param {Array} carro - Contenido del carrito.
+     * @returns {Promise<boolean>} True si se insertó correctamente.
+     */
+    async agregarCarro(email, carro) {
+        const consulta = `INSERT INTO carros(email, carro) VALUES ($1, $2)`;
+        const parametros = [email, JSON.stringify(carro)];
+
+        try {
             const result = await TiendaDB.consultar(this.client, consulta, parametros);
             return result.rowCount > 0;
-        } 
-        catch (error){
-            console.error('Error al realizar la consulta: ', error);
+        } catch (error) {
+            console.error('Error al realizar la consulta:', error);
             return false;
         }
-        
     }
 
+    /**
+     * Actualiza el carrito de un usuario y registra la fecha actual.
+     * @param {string} email - Email del usuario.
+     * @param {Array} carro - Nuevo contenido del carrito.
+     * @returns {Promise<Array>} Resultado de la actualización.
+     */
     async actualizar(email, carro) {
-        const consulta = `UPDATE carros
-                            SET carro=$1
-                            WHERE email=$2 
-                            RETURNING * `;
-        const parametros = [JSON.stringify(carro),email];
+        const consulta = `
+            UPDATE carros
+            SET carro = $1, fecha = CURRENT_TIMESTAMP
+            WHERE email = $2
+            RETURNING *
+        `;
+        const parametros = [JSON.stringify(carro), email];
         const result = await TiendaDB.consultar(this.client, consulta, parametros);
         return result;
     }
 
-    async carro(email){
-        const consulta = `SELECT carro FROM carros WHERE email=$1`;
+    /**
+     * Obtiene el carrito de un usuario.
+     * @param {string} email - Email del usuario.
+     * @returns {Promise<Array>} Contenido del carrito o array vacío si no existe.
+     */
+    async carro(email) {
+        const consulta = `SELECT carro FROM carros WHERE email = $1`;
         const parametros = [email];
         const result = await TiendaDB.consultar(this.client, consulta, parametros);
-        if (result?.length > 0) return result[0].carro;
-        else return [];
+        return result?.length > 0 ? result[0].carro : [];
     }
 
-    async carroVacio(email){
+    /**
+     * Verifica si el carrito de un usuario está vacío.
+     * @param {string} email - Email del usuario.
+     * @returns {Promise<boolean>} True si está vacío.
+     */
+    async carroVacio(email) {
         const carro = await this.carro(email);
-        if (carro.length === 0) return true;
-        return false;
-
+        return carro.length === 0;
     }
 
-    async existeCarro(email){
-        const consulta = `SELECT email FROM carros WHERE email=$1`;
+    /**
+     * Verifica si existe un carrito para el usuario.
+     * @param {string} email - Email del usuario.
+     * @returns {Promise<boolean>} True si existe.
+     */
+    async existeCarro(email) {
+        const consulta = `SELECT email FROM carros WHERE email = $1`;
         const parametros = [email];
         const result = await TiendaDB.consultar(this.client, consulta, parametros);
-        console.log(`Resultado de la consulta existe carro: ${result.length}`);
+        console.log(`Resultado de la consulta existeCarro: ${result.length}`);
         return result?.length > 0;
     }
 
-    async vaciar(email){
-        const consulta = `UPDATE carros
-                          SET carro = $1
-                          WHERE email = $2
-                          RETURNING *`;
+    /**
+     * Vacía el carrito de un usuario.
+     * @param {string} email - Email del usuario.
+     * @returns {Promise<boolean>} True si se actualizó correctamente.
+     */
+    async vaciar(email) {
+        const consulta = `
+            UPDATE carros
+            SET carro = $1
+            WHERE email = $2
+            RETURNING *
+        `;
         const parametros = ['[]', email];
         const result = await TiendaDB.consultar(this.client, consulta, parametros);
         return result && result.rowCount > 0;
-        
     }
 
-
+    /**
+     * Revisa los carritos que no se han actualizado en cierto número de horas.
+     * Útil para limpiar carritos abandonados.
+     * @param {number} horas - Número de horas de inactividad.
+     * @returns {Promise<Array>} Lista de carritos antiguos.
+     */
+    async revisarFechaCarros(horas) {
+        const consulta = `
+            SELECT email, carro
+            FROM carros
+            WHERE fecha < NOW() - ($1 * INTERVAL '1 hour')
+        `;
+        const parametros = [horas];
+        const result = await TiendaDB.consultar(this.client, consulta, parametros);
+        return result;
+    }
 }
 
-export default Carros
+export default Carros;
