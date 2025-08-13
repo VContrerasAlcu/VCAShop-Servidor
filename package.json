@@ -25,5 +25,8 @@
     "redsys-api": "^0.0.3",
     "socket.io": "^4.8.1",
     "validator": "^13.15.0"
+  },
+  "devDependencies": {
+    "jsdoc": "^4.0.4"
   }
 }
