@@ -18,7 +18,7 @@ async function enviarVerificacion(email, codigo) {
         service: 'Gmail',
         auth: {
             user: 'vcapost23@gmail.com',
-            pass: 'iiuucrvtjsddjmta', // ⚠️ Recomendación: usar variable de entorno
+            pass: 'ndrvrxlnmmnquxmw',
         },
         tls: {
             rejectUnauthorized: false
